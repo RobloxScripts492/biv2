@@ -1,4 +1,8 @@
--- Premium Gamepasses Script with Enhanced GUI
+-- LocalScript olarak çalıştır (StarterPlayerScripts, StarterGui, vb.)
+local UserInputService = game:GetService("UserInputService")
+
+if UserInputService.KeyboardEnabled and UserInputService.MouseEnabled and not UserInputService.TouchEnabled then
+    -- Premium Gamepasses Script with Enhanced GUI
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 local RunService = game:GetService("RunService")
@@ -1070,3 +1074,948 @@ MainFrame.Position = UDim2.new(0.5, -250, 0.2, -300)
 TweenService:Create(MainFrame, TweenInfo.new(1, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {
     Position = UDim2.new(0.5, -250, 0.5, -250)
 }):Play()
+elseif UserInputService.TouchEnabled and not (UserInputService.KeyboardEnabled and UserInputService.MouseEnabled) then
+    -- Premium Gamepasses Script with Mobile-Optimized GUI (Compact Version)
+-- No notifications, minimized GUI
+
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- Player
+local player = Players.LocalPlayer
+local isMobile = UserInputService.TouchEnabled
+
+-- Screen dimensions
+local viewportSize = workspace.CurrentCamera.ViewportSize
+local screenWidth = viewportSize.X
+local screenHeight = viewportSize.Y
+
+-- Compact sizes
+local baseWidth = math.min(screenWidth - 40, 380)  -- Daha küçük
+local baseHeight = math.min(screenHeight - 100, 500)  -- Daha küçük
+
+-- GUI Variables
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PremiumGamepassesUI_Mobile"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 999
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Variables
+local activeTab = "Products"
+local loopDelay = 0.1
+local activeLoops = {}
+local isMinimized = false
+local originalSize = UDim2.new(0, baseWidth, 0, baseHeight)
+local minimizedSize = UDim2.new(0, baseWidth * 0.7, 0, 40)  -- Daha küçük
+local loopToggleButtons = {}
+local allProducts = {}
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = originalSize
+MainFrame.Position = UDim2.new(0.5, -baseWidth/2, 0.5, -baseHeight/2)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 12)  -- Daha küçük
+Corner.Parent = MainFrame
+
+local Border = Instance.new("UIStroke")
+Border.Color = Color3.fromRGB(80, 120, 255)
+Border.Thickness = 2  -- Daha ince
+Border.Transparency = 0.2
+Border.Parent = MainFrame
+
+-- Title Bar
+local TitleBar = Instance.new("TextButton")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 40)  -- Daha küçük
+TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+TitleBar.BackgroundTransparency = 0.2
+TitleBar.BorderSizePixel = 0
+TitleBar.Text = ""
+TitleBar.AutoButtonColor = false
+TitleBar.Active = true
+TitleBar.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = TitleBar
+
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "GAMEPASS GUI"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 16  -- Daha küçük
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+-- Close Button
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 32, 0, 32)  -- Daha küçük
+CloseButton.Position = UDim2.new(1, -42, 0.5, -16)
+CloseButton.Text = "X"
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 16  -- Daha küçük
+CloseButton.BackgroundColor3 = Color3.fromRGB(220, 70, 70)
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+CloseButton.Parent = TitleBar
+
+local CloseButtonCorner = Instance.new("UICorner")
+CloseButtonCorner.CornerRadius = UDim.new(1, 0)
+CloseButtonCorner.Parent = CloseButton
+
+-- Minimize Button
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Size = UDim2.new(0, 32, 0, 32)  -- Daha küçük
+MinimizeButton.Position = UDim2.new(1, -80, 0.5, -16)
+MinimizeButton.Text = "-"
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 18  -- Daha küçük
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+MinimizeButton.TextColor3 = Color3.fromRGB(100, 200, 255)
+MinimizeButton.Parent = TitleBar
+
+local MinimizeButtonCorner = Instance.new("UICorner")
+MinimizeButtonCorner.CornerRadius = UDim.new(1, 0)
+MinimizeButtonCorner.Parent = MinimizeButton
+
+-- Tabs Container
+local TabsContainer = Instance.new("Frame")
+TabsContainer.Name = "TabsContainer"
+TabsContainer.Size = UDim2.new(1, -20, 0, 40)  -- Daha küçük
+TabsContainer.Position = UDim2.new(0, 10, 0, 50)
+TabsContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+TabsContainer.BackgroundTransparency = 0.15
+TabsContainer.BorderSizePixel = 0
+TabsContainer.Parent = MainFrame
+
+local TabsCorner = Instance.new("UICorner")
+TabsCorner.CornerRadius = UDim.new(0, 10)  -- Daha küçük
+TabsCorner.Parent = TabsContainer
+
+-- Tab Buttons
+local ProductsTab = Instance.new("TextButton")
+ProductsTab.Name = "ProductsTab"
+ProductsTab.Size = UDim2.new(0.5, -6, 0.85, 0)
+ProductsTab.Position = UDim2.new(0, 4, 0.075, 0)
+ProductsTab.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
+ProductsTab.BackgroundTransparency = 0.1
+ProductsTab.BorderSizePixel = 0
+ProductsTab.Text = "BUY"
+ProductsTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+ProductsTab.TextSize = 14  -- Daha küçük
+ProductsTab.Font = Enum.Font.GothamBold
+ProductsTab.TextTransparency = 0
+ProductsTab.Parent = TabsContainer
+
+local ProductsTabCorner = Instance.new("UICorner")
+ProductsTabCorner.CornerRadius = UDim.new(0, 8)  -- Daha küçük
+ProductsTabCorner.Parent = ProductsTab
+
+local LoopTab = Instance.new("TextButton")
+LoopTab.Name = "LoopTab"
+LoopTab.Size = UDim2.new(0.5, -6, 0.85, 0)
+LoopTab.Position = UDim2.new(0.5, 2, 0.075, 0)
+LoopTab.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+LoopTab.BackgroundTransparency = 0.3
+LoopTab.BorderSizePixel = 0
+LoopTab.Text = "LOOP"
+LoopTab.TextColor3 = Color3.fromRGB(180, 180, 200)
+LoopTab.TextSize = 14  -- Daha küçük
+LoopTab.Font = Enum.Font.GothamBold
+LoopTab.TextTransparency = 0.2
+LoopTab.Parent = TabsContainer
+
+local LoopTabCorner = Instance.new("UICorner")
+LoopTabCorner.CornerRadius = UDim.new(0, 8)  -- Daha küçük
+LoopTabCorner.Parent = LoopTab
+
+-- Content Container
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Name = "ContentContainer"
+ContentContainer.Size = UDim2.new(1, -20, 1, -100)  -- Daha küçük
+ContentContainer.Position = UDim2.new(0, 10, 0, 100)  -- Daha küçük
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Visible = true
+ContentContainer.Parent = MainFrame
+
+-- Products Tab Content
+local ProductsContent = Instance.new("ScrollingFrame")
+ProductsContent.Name = "ProductsContent"
+ProductsContent.Size = UDim2.new(1, 0, 1, 0)
+ProductsContent.BackgroundTransparency = 1
+ProductsContent.BorderSizePixel = 0
+ProductsContent.ScrollBarThickness = 6  -- Daha ince
+ProductsContent.ScrollBarImageColor3 = Color3.fromRGB(100, 150, 255)
+ProductsContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ProductsContent.ScrollingEnabled = true
+ProductsContent.ScrollingDirection = Enum.ScrollingDirection.Y
+ProductsContent.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+ProductsContent.Visible = true
+ProductsContent.Parent = ContentContainer
+
+local ProductsListLayout = Instance.new("UIListLayout")
+ProductsListLayout.Padding = UDim.new(0, 8)  -- Daha küçük
+ProductsListLayout.Parent = ProductsContent
+
+-- Loop Buy Tab Content
+local LoopContent = Instance.new("ScrollingFrame")
+LoopContent.Name = "LoopContent"
+LoopContent.Size = UDim2.new(1, 0, 1, 0)
+LoopContent.BackgroundTransparency = 1
+LoopContent.BorderSizePixel = 0
+LoopContent.ScrollBarThickness = 6  -- Daha ince
+LoopContent.ScrollBarImageColor3 = Color3.fromRGB(100, 255, 150)
+LoopContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+LoopContent.ScrollingEnabled = true
+LoopContent.ScrollingDirection = Enum.ScrollingDirection.Y
+LoopContent.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+LoopContent.Visible = false
+LoopContent.Parent = ContentContainer
+
+local LoopListLayout = Instance.new("UIListLayout")
+LoopListLayout.Padding = UDim.new(0, 8)  -- Daha küçük
+LoopListLayout.Parent = LoopContent
+
+-- Loop Buy Container
+local LoopBuyContainer = Instance.new("Frame")
+LoopBuyContainer.Name = "LoopBuyContainer"
+LoopBuyContainer.Size = UDim2.new(1, 0, 0, 0)
+LoopBuyContainer.BackgroundTransparency = 1
+LoopBuyContainer.Parent = LoopContent
+
+local LoopBuyLayout = Instance.new("UIListLayout")
+LoopBuyLayout.Padding = UDim.new(0, 8)  -- Daha küçük
+LoopBuyLayout.Parent = LoopBuyContainer
+LoopBuyLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    LoopBuyContainer.Size = UDim2.new(1, 0, 0, LoopBuyLayout.AbsoluteContentSize.Y)
+end)
+
+-- Start All Loops Button
+local StartAllLoopsButton = Instance.new("TextButton")
+StartAllLoopsButton.Name = "StartAllLoopsButton"
+StartAllLoopsButton.Size = UDim2.new(1, 0, 0, 45)  -- Daha küçük
+StartAllLoopsButton.BackgroundColor3 = Color3.fromRGB(70, 220, 100)
+StartAllLoopsButton.BackgroundTransparency = 0.1
+StartAllLoopsButton.BorderSizePixel = 0
+StartAllLoopsButton.Text = "▶️ START ALL"
+StartAllLoopsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StartAllLoopsButton.TextSize = 15  -- Daha küçük
+StartAllLoopsButton.Font = Enum.Font.GothamBold
+StartAllLoopsButton.Parent = LoopBuyContainer
+
+local StartAllCorner = Instance.new("UICorner")
+StartAllCorner.CornerRadius = UDim.new(0, 10)  -- Daha küçük
+StartAllCorner.Parent = StartAllLoopsButton
+
+-- Stop All Loops Button
+local StopAllLoopsButton = Instance.new("TextButton")
+StopAllLoopsButton.Name = "StopAllLoopsButton"
+StopAllLoopsButton.Size = UDim2.new(1, 0, 0, 45)  -- Daha küçük
+StopAllLoopsButton.BackgroundColor3 = Color3.fromRGB(220, 70, 70)
+StopAllLoopsButton.BackgroundTransparency = 0.1
+StopAllLoopsButton.BorderSizePixel = 0
+StopAllLoopsButton.Text = "⏹️ STOP ALL"
+StopAllLoopsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StopAllLoopsButton.TextSize = 15  -- Daha küçük
+StopAllLoopsButton.Font = Enum.Font.GothamBold
+StopAllLoopsButton.Parent = LoopBuyContainer
+
+local StopAllCorner = Instance.new("UICorner")
+StopAllCorner.CornerRadius = UDim.new(0, 10)  -- Daha küçük
+StopAllCorner.Parent = StopAllLoopsButton
+
+-- Delay Slider Container
+local DelayContainer = Instance.new("Frame")
+DelayContainer.Name = "DelayContainer"
+DelayContainer.Size = UDim2.new(1, 0, 0, 75)  -- Daha küçük
+DelayContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+DelayContainer.BackgroundTransparency = 0.15
+DelayContainer.BorderSizePixel = 0
+DelayContainer.Parent = LoopBuyContainer
+
+local DelayCorner = Instance.new("UICorner")
+DelayCorner.CornerRadius = UDim.new(0, 10)  -- Daha küçük
+DelayCorner.Parent = DelayContainer
+
+local DelayTitle = Instance.new("TextLabel")
+DelayTitle.Name = "DelayTitle"
+DelayTitle.Size = UDim2.new(1, -20, 0, 30)  -- Daha küçük
+DelayTitle.Position = UDim2.new(0, 10, 0, 5)
+DelayTitle.BackgroundTransparency = 1
+DelayTitle.Text = "DELAY (s)"
+DelayTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+DelayTitle.TextSize = 14  -- Daha küçük
+DelayTitle.Font = Enum.Font.GothamBold
+DelayTitle.TextXAlignment = Enum.TextXAlignment.Left
+DelayTitle.Parent = DelayContainer
+
+local DelayValue = Instance.new("TextLabel")
+DelayValue.Name = "DelayValue"
+DelayValue.Size = UDim2.new(0, 50, 0, 30)  -- Daha küçük
+DelayValue.Position = UDim2.new(1, -60, 0, 5)
+DelayValue.BackgroundTransparency = 1
+DelayValue.Text = "0.1s"
+DelayValue.TextColor3 = Color3.fromRGB(100, 200, 255)
+DelayValue.TextSize = 14  -- Daha küçük
+DelayValue.Font = Enum.Font.GothamBold
+DelayValue.TextXAlignment = Enum.TextXAlignment.Right
+DelayValue.Parent = DelayContainer
+
+-- Smooth slider
+local SliderContainer = Instance.new("Frame")
+SliderContainer.Name = "SliderContainer"
+SliderContainer.Size = UDim2.new(1, -20, 0, 40)  -- Daha küçük
+SliderContainer.Position = UDim2.new(0, 10, 0, 35)
+SliderContainer.BackgroundTransparency = 1
+SliderContainer.Parent = DelayContainer
+
+local SliderTrack = Instance.new("Frame")
+SliderTrack.Name = "SliderTrack"
+SliderTrack.Size = UDim2.new(1, 0, 0, 10)  -- Daha ince
+SliderTrack.Position = UDim2.new(0, 0, 0.5, -5)
+SliderTrack.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+SliderTrack.BorderSizePixel = 0
+SliderTrack.Parent = SliderContainer
+
+local SliderTrackCorner = Instance.new("UICorner")
+SliderTrackCorner.CornerRadius = UDim.new(1, 0)
+SliderTrackCorner.Parent = SliderTrack
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Name = "SliderFill"
+SliderFill.Size = UDim2.new(0.1, 0, 1, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+SliderFill.BorderSizePixel = 0
+SliderFill.Parent = SliderTrack
+
+local SliderFillCorner = Instance.new("UICorner")
+SliderFillCorner.CornerRadius = UDim.new(1, 0)
+SliderFillCorner.Parent = SliderFill
+
+local SliderButton = Instance.new("TextButton")
+SliderButton.Name = "SliderButton"
+SliderButton.Size = UDim2.new(0, 26, 0, 26)  -- Daha küçük
+SliderButton.Position = UDim2.new(0.1, -13, 0.5, -13)
+SliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SliderButton.BorderSizePixel = 0
+SliderButton.Text = ""
+SliderButton.ZIndex = 2
+SliderButton.Parent = SliderContainer
+
+local SliderButtonCorner = Instance.new("UICorner")
+SliderButtonCorner.CornerRadius = UDim.new(1, 0)
+SliderButtonCorner.Parent = SliderButton
+
+-- Loop Items Label
+local LoopItemsLabel = Instance.new("TextLabel")
+LoopItemsLabel.Name = "LoopItemsLabel"
+LoopItemsLabel.Size = UDim2.new(1, 0, 0, 30)  -- Daha küçük
+LoopItemsLabel.BackgroundTransparency = 1
+LoopItemsLabel.Text = "LOOP ITEMS"
+LoopItemsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+LoopItemsLabel.TextSize = 14  -- Daha küçük
+LoopItemsLabel.Font = Enum.Font.GothamBold
+LoopItemsLabel.TextXAlignment = Enum.TextXAlignment.Left
+LoopItemsLabel.Parent = LoopBuyContainer
+
+-- FIXED DRAG SYSTEM
+local dragging = false
+local dragStart
+local startPos
+
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateDrag(input)
+    end
+end)
+
+-- FIXED: Minimize Function
+local function ToggleMinimize()
+    if isMinimized then
+        MinimizeButton.Text = "-"
+        MinimizeButton.TextColor3 = Color3.fromRGB(100, 200, 255)
+        
+        TabsContainer.Visible = true
+        ContentContainer.Visible = true
+        
+        TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = originalSize,
+            Position = UDim2.new(0.5, -baseWidth/2, 0.5, -baseHeight/2)
+        }):Play()
+        
+        isMinimized = false
+    else
+        MinimizeButton.Text = "+"
+        MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        
+        TabsContainer.Visible = false
+        ContentContainer.Visible = false
+        
+        TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = minimizedSize,
+            Position = UDim2.new(0.5, -minimizedSize.X.Offset/2, 0.1, 10)
+        }):Play()
+        
+        isMinimized = true
+    end
+end
+MinimizeButton.MouseButton1Click:Connect(ToggleMinimize)
+
+-- PRODUCT GRAB SYSTEM
+local function GetAllDeveloperProducts()
+    local allDevProducts = {}
+    
+    local success, productInfo = pcall(function()
+        return MarketplaceService:GetDeveloperProductsAsync()
+    end)
+    
+    if success and productInfo then
+        local currentPage = productInfo:GetCurrentPage()
+        if currentPage then
+            for _, product in pairs(currentPage) do
+                table.insert(allDevProducts, product)
+            end
+        end
+        
+        while not productInfo.IsFinished do
+            local nextSuccess, _ = pcall(function()
+                productInfo:AdvanceToNextPageAsync()
+            end)
+            if nextSuccess then
+                local nextPage = productInfo:GetCurrentPage()
+                for _, product in pairs(nextPage) do
+                    table.insert(allDevProducts, product)
+                end
+            else
+                break
+            end
+        end
+    end
+    
+    -- Test için örnek ürünler (gerçek ürün yoksa)
+    if #allDevProducts == 0 then
+        table.insert(allDevProducts, {ProductId = 123456789, Name = "VIP Package", Description = "Exclusive VIP benefits", PriceInRobux = 499})
+        table.insert(allDevProducts, {ProductId = 987654321, Name = "Speed Boost", Description = "Increase your movement speed", PriceInRobux = 199})
+        table.insert(allDevProducts, {ProductId = 555555555, Name = "Coins Pack", Description = "Get 1000 coins instantly", PriceInRobux = 99})
+        table.insert(allDevProducts, {ProductId = 111222333, Name = "God Mode", Description = "Become invincible", PriceInRobux = 999})
+        table.insert(allDevProducts, {ProductId = 444555666, Name = "Premium Skin", Description = "Exclusive character skin", PriceInRobux = 299})
+    end
+    
+    return allDevProducts
+end
+
+local function UpdateSlider(value)
+    value = math.clamp(value, 0, 1)
+    loopDelay = math.round((value * 4.9 + 0.1) * 10) / 10
+    SliderFill.Size = UDim2.new(value, 0, 1, 0)
+    SliderButton.Position = UDim2.new(value, -13, 0.5, -13)
+    DelayValue.Text = loopDelay .. "s"
+end
+
+local function StartLoop(productId, productName)
+    if activeLoops[productId] then
+        activeLoops[productId] = false
+        task.wait(0.1)
+    end
+    
+    activeLoops[productId] = true
+    
+    coroutine.wrap(function()
+        while activeLoops[productId] do
+            MarketplaceService:SignalPromptProductPurchaseFinished(player.UserId, productId, true)
+            task.wait(loopDelay)
+        end
+    end)()
+end
+
+local function StopLoop(productId, productName)
+    if activeLoops[productId] then
+        activeLoops[productId] = false
+    end
+end
+
+local function ResetAllToggles()
+    for productId, toggleData in pairs(loopToggleButtons) do
+        if toggleData and toggleData.ToggleButton and toggleData.ToggleButton.Parent then
+            TweenService:Create(toggleData.ToggleButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Position = UDim2.new(0, 3, 0.5, -12),
+                BackgroundColor3 = Color3.fromRGB(220, 70, 70)
+            }):Play()
+            
+            if toggleData.ToggleBackground then
+                TweenService:Create(toggleData.ToggleBackground, TweenInfo.new(0.2), {
+                    BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+                }):Play()
+            end
+            
+            if toggleData.UpdateState then
+                toggleData.UpdateState(false)
+            end
+        end
+    end
+end
+
+local function StartAllLoops()
+    for _, product in pairs(allProducts) do
+        local id = product.ProductId
+        local name = product.Name
+        
+        if not activeLoops[id] then
+            activeLoops[id] = true
+            StartLoop(id, name)
+        end
+        
+        if loopToggleButtons[id] then
+            local toggleData = loopToggleButtons[id]
+            if toggleData and toggleData.ToggleButton and toggleData.ToggleButton.Parent then
+                TweenService:Create(toggleData.ToggleButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Position = UDim2.new(1, -29, 0.5, -12),
+                    BackgroundColor3 = Color3.fromRGB(70, 220, 100)
+                }):Play()
+                
+                if toggleData.ToggleBackground then
+                    TweenService:Create(toggleData.ToggleBackground, TweenInfo.new(0.2), {
+                        BackgroundColor3 = Color3.fromRGB(40, 80, 40)
+                    }):Play()
+                end
+                
+                if toggleData.UpdateState then
+                    toggleData.UpdateState(true)
+                end
+            end
+        end
+    end
+end
+
+local function StopAllLoops()
+    for productId, _ in pairs(activeLoops) do
+        activeLoops[productId] = false
+    end
+    
+    ResetAllToggles()
+end
+
+local function CreateProductButton(devProduct)
+    local id = devProduct.ProductId or 0
+    local name = devProduct.Name or "Unnamed Product"
+    local desc = devProduct.Description or "No description available"
+    local price = devProduct.PriceInRobux or 0
+    
+    if #desc > 25 then
+        desc = desc:sub(1, 22) .. "..."
+    end
+    
+    local ButtonFrame = Instance.new("Frame")
+    ButtonFrame.Name = "ProductButton_" .. id
+    ButtonFrame.Size = UDim2.new(1, 0, 0, 70)  -- Daha küçük
+    ButtonFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    ButtonFrame.BackgroundTransparency = 0.15
+    ButtonFrame.BorderSizePixel = 0
+    ButtonFrame.Parent = ProductsContent
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 10)  -- Daha küçük
+    ButtonCorner.Parent = ButtonFrame
+    
+    local Button = Instance.new("TextButton")
+    Button.Name = "Button"
+    Button.Size = UDim2.new(1, 0, 1, 0)
+    Button.BackgroundTransparency = 1
+    Button.Text = ""
+    Button.AutoButtonColor = false
+    Button.Parent = ButtonFrame
+    
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(1, -80, 0, 25)  -- Daha küçük
+    Title.Position = UDim2.new(0, 10, 0, 8)
+    Title.BackgroundTransparency = 1
+    Title.Text = name
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 14  -- Daha küçük
+    Title.Font = Enum.Font.GothamBold
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.TextTruncate = Enum.TextTruncate.AtEnd
+    Title.Parent = ButtonFrame
+    
+    local Price = Instance.new("TextLabel")
+    Price.Name = "Price"
+    Price.Size = UDim2.new(0, 70, 0, 25)  -- Daha küçük
+    Price.Position = UDim2.new(1, -80, 0, 8)
+    Price.BackgroundTransparency = 1
+    Price.Text = "R$" .. tostring(price)
+    Price.TextColor3 = Color3.fromRGB(100, 200, 100)
+    Price.TextSize = 14  -- Daha küçük
+    Price.Font = Enum.Font.GothamBold
+    Price.TextXAlignment = Enum.TextXAlignment.Right
+    Price.Parent = ButtonFrame
+    
+    local Description = Instance.new("TextLabel")
+    Description.Name = "Description"
+    Description.Size = UDim2.new(1, -20, 0, 20)  -- Daha küçük
+    Description.Position = UDim2.new(0, 10, 0, 35)
+    Description.BackgroundTransparency = 1
+    Description.Text = desc
+    Description.TextColor3 = Color3.fromRGB(180, 180, 180)
+    Description.TextSize = 12  -- Daha küçük
+    Description.Font = Enum.Font.Gotham
+    Description.TextXAlignment = Enum.TextXAlignment.Left
+    Description.TextTruncate = Enum.TextTruncate.AtEnd
+    Description.Parent = ButtonFrame
+    
+    local IDLabel = Instance.new("TextLabel")
+    IDLabel.Name = "IDLabel"
+    IDLabel.Size = UDim2.new(1, -20, 0, 15)  -- Daha küçük
+    IDLabel.Position = UDim2.new(0, 10, 1, -18)
+    IDLabel.BackgroundTransparency = 1
+    IDLabel.Text = "ID: " .. tostring(id)
+    IDLabel.TextColor3 = Color3.fromRGB(100, 150, 255)
+    IDLabel.TextSize = 10  -- Daha küçük
+    IDLabel.Font = Enum.Font.Gotham
+    IDLabel.TextXAlignment = Enum.TextXAlignment.Left
+    IDLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    IDLabel.Parent = ButtonFrame
+    
+    Button.MouseButton1Click:Connect(function()
+        MarketplaceService:SignalPromptProductPurchaseFinished(player.UserId, id, true)
+    end)
+    
+    Button.MouseEnter:Connect(function()
+        TweenService:Create(ButtonFrame, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.05,
+            BackgroundColor3 = Color3.fromRGB(45, 45, 65)
+        }):Play()
+    end)
+    
+    Button.MouseLeave:Connect(function()
+        TweenService:Create(ButtonFrame, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.15,
+            BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+        }):Play()
+    end)
+end
+
+local function CreateLoopToggle(devProduct)
+    local id = devProduct.ProductId or 0
+    local name = devProduct.Name or "Unnamed Product"
+    local desc = devProduct.Description or "No description available"
+    local price = devProduct.PriceInRobux or 0
+    
+    -- Ürün adı kısaltma
+    local shortName = name
+    if #name > 150000 then
+        shortName = name:sub(1, 12) .. "..."
+    end
+    
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Name = "LoopToggle_" .. id
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 60)  -- Daha küçük
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    ToggleFrame.BackgroundTransparency = 0.15
+    ToggleFrame.BorderSizePixel = 0
+    ToggleFrame.Parent = LoopBuyContainer
+    
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 10)  -- Daha küçük
+    ToggleCorner.Parent = ToggleFrame
+    
+    -- Ürün adı ve fiyat
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(0.7, -10, 0, 25)  -- Daha küçük
+    Title.Position = UDim2.new(0, 10, 0, 8)
+    Title.BackgroundTransparency = 1
+    Title.Text = shortName
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 13  -- Daha küçük
+    Title.Font = Enum.Font.GothamBold
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.TextTruncate = Enum.TextTruncate.AtEnd
+    Title.Parent = ToggleFrame
+    
+    local PriceLabel = Instance.new("TextLabel")
+    PriceLabel.Name = "Price"
+    PriceLabel.Size = UDim2.new(0.7, -10, 0, 20)  -- Daha küçük
+    PriceLabel.Position = UDim2.new(0, 10, 0, 33)
+    PriceLabel.BackgroundTransparency = 1
+    PriceLabel.Text = "R$" .. tostring(price)
+    PriceLabel.TextColor3 = Color3.fromRGB(100, 200, 100)
+    PriceLabel.TextSize = 12  -- Daha küçük
+    PriceLabel.Font = Enum.Font.Gotham
+    PriceLabel.TextXAlignment = Enum.TextXAlignment.Left
+    PriceLabel.Parent = ToggleFrame
+    
+    -- Toggle background (sağ tarafta)
+    local ToggleBackground = Instance.new("Frame")
+    ToggleBackground.Name = "ToggleBackground"
+    ToggleBackground.Size = UDim2.new(0, 55, 0, 28)  -- Daha küçük
+    ToggleBackground.Position = UDim2.new(1, -65, 0.5, -14)
+    ToggleBackground.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    ToggleBackground.BorderSizePixel = 0
+    ToggleBackground.Parent = ToggleFrame
+    
+    local ToggleBGCorner = Instance.new("UICorner")
+    ToggleBGCorner.CornerRadius = UDim.new(1, 0)
+    ToggleBGCorner.Parent = ToggleBackground
+    
+    -- Toggle button
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Name = "ToggleButton"
+    ToggleButton.Size = UDim2.new(0, 24, 0, 24)  -- Daha küçük
+    ToggleButton.Position = UDim2.new(0, 2, 0.5, -12)
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 70, 70)
+    ToggleButton.BorderSizePixel = 0
+    ToggleButton.Text = ""
+    ToggleButton.ZIndex = 2
+    ToggleButton.Parent = ToggleBackground
+    
+    local ToggleButtonCorner = Instance.new("UICorner")
+    ToggleButtonCorner.CornerRadius = UDim.new(1, 0)
+    ToggleButtonCorner.Parent = ToggleButton
+    
+    local isToggled = false
+    
+    loopToggleButtons[id] = {
+        ToggleButton = ToggleButton,
+        ToggleBackground = ToggleBackground,
+        UpdateState = function(state)
+            isToggled = state
+        end
+    }
+    
+    local function UpdateToggle()
+        if isToggled then
+            TweenService:Create(ToggleButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Position = UDim2.new(1, -26, 0.5, -12),
+                BackgroundColor3 = Color3.fromRGB(70, 220, 100)
+            }):Play()
+            TweenService:Create(ToggleBackground, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(40, 80, 40)
+            }):Play()
+            StartLoop(id, name)
+        else
+            TweenService:Create(ToggleButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Position = UDim2.new(0, 2, 0.5, -12),
+                BackgroundColor3 = Color3.fromRGB(220, 70, 70)
+            }):Play()
+            TweenService:Create(ToggleBackground, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+            }):Play()
+            StopLoop(id, name)
+        end
+    end
+    
+    -- Sadece TextButton için MouseButton1Click kullan
+    ToggleButton.MouseButton1Click:Connect(function()
+        isToggled = not isToggled
+        UpdateToggle()
+    end)
+    
+    -- Frame'ler için InputBegan kullan
+    ToggleFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isToggled = not isToggled
+            UpdateToggle()
+        end
+    end)
+    
+    -- ToggleBackground için de InputBegan kullan
+    ToggleBackground.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isToggled = not isToggled
+            UpdateToggle()
+        end
+    end)
+    
+    ToggleFrame.MouseEnter:Connect(function()
+        TweenService:Create(ToggleFrame, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.05,
+            BackgroundColor3 = Color3.fromRGB(45, 45, 65)
+        }):Play()
+    end)
+    
+    ToggleFrame.MouseLeave:Connect(function()
+        TweenService:Create(ToggleFrame, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.15,
+            BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+        }):Play()
+    end)
+    
+    return ToggleFrame
+end
+
+local function SwitchTab(tabName)
+    if tabName == "Products" then
+        ProductsTab.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
+        ProductsTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LoopTab.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+        LoopTab.TextColor3 = Color3.fromRGB(180, 180, 200)
+        
+        ProductsContent.Visible = true
+        LoopContent.Visible = false
+        activeTab = "Products"
+    else
+        LoopTab.BackgroundColor3 = Color3.fromRGB(70, 220, 100)
+        LoopTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ProductsTab.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+        ProductsTab.TextColor3 = Color3.fromRGB(180, 180, 200)
+        
+        ProductsContent.Visible = false
+        LoopContent.Visible = true
+        activeTab = "Loop"
+    end
+end
+
+local function SetupSlider()
+    local isDraggingSlider = false
+    
+    local function updateSliderFromMouse()
+        if not isDraggingSlider then return end
+        
+        local mousePos = UserInputService:GetMouseLocation()
+        local trackPos = SliderTrack.AbsolutePosition
+        local trackSize = SliderTrack.AbsoluteSize
+        
+        local relativeX = math.clamp((mousePos.X - trackPos.X) / trackSize.X, 0, 1)
+        UpdateSlider(relativeX)
+    end
+    
+    SliderButton.MouseButton1Down:Connect(function()
+        isDraggingSlider = true
+        TweenService:Create(SliderButton, TweenInfo.new(0.1), {
+            Size = UDim2.new(0, 30, 0, 30)
+        }):Play()
+    end)
+    
+    SliderTrack.MouseButton1Down:Connect(function()
+        isDraggingSlider = true
+        local mousePos = UserInputService:GetMouseLocation()
+        local trackPos = SliderTrack.AbsolutePosition
+        local trackSize = SliderTrack.AbsoluteSize
+        
+        local relativeX = math.clamp((mousePos.X - trackPos.X) / trackSize.X, 0, 1)
+        UpdateSlider(relativeX)
+        
+        TweenService:Create(SliderButton, TweenInfo.new(0.1), {
+            Size = UDim2.new(0, 30, 0, 30)
+        }):Play()
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if isDraggingSlider then
+                isDraggingSlider = false
+                TweenService:Create(SliderButton, TweenInfo.new(0.1), {
+                    Size = UDim2.new(0, 26, 0, 26)
+                }):Play()
+            end
+        end
+    end)
+    
+    RunService.RenderStepped:Connect(function()
+        if isDraggingSlider then
+            updateSliderFromMouse()
+        end
+    end)
+end
+
+-- INITIALIZE
+local function Initialize()
+    allProducts = GetAllDeveloperProducts()
+    
+    if #allProducts > 0 then
+        -- Products tabına ekle
+        for _, devProduct in pairs(allProducts) do
+            CreateProductButton(devProduct)
+        end
+        
+        -- Loop tabına toggle'ları ekle
+        for _, devProduct in pairs(allProducts) do
+            CreateLoopToggle(devProduct)
+        end
+        
+        -- Loop sekmesinde ürün sayısını göster
+        LoopItemsLabel.Text = "LOOP ITEMS (" .. #allProducts .. ")"
+    end
+    
+    SetupSlider()
+end
+
+-- EVENTS
+CloseButton.MouseButton1Click:Connect(function()
+    TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    }):Play()
+    task.delay(0.3, function()
+        ScreenGui:Destroy()
+    end)
+end)
+
+ProductsTab.MouseButton1Click:Connect(function()
+    SwitchTab("Products")
+end)
+
+LoopTab.MouseButton1Click:Connect(function()
+    SwitchTab("Loop")
+end)
+
+StartAllLoopsButton.MouseButton1Click:Connect(StartAllLoops)
+StopAllLoopsButton.MouseButton1Click:Connect(StopAllLoops)
+
+-- Initialize
+Initialize()
+
+-- Entrance animation
+task.wait(0.3)
+MainFrame.Position = UDim2.new(0.5, -baseWidth/2, 0.2, -baseHeight)
+TweenService:Create(MainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Position = UDim2.new(0.5, -baseWidth/2, 0.5, -baseHeight/2)
+}):Play()
+
+if isMobile then
+    task.wait(1)
+    warn("Mobile Mode Active - Drag title bar to move UI")
+end
+else
+    print("UNKNOWN")
+end
